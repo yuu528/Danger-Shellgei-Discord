@@ -18,16 +18,18 @@ client.on('message', msg => {
 		if(!/^#!/.test(writeCmd)) {
 			writeCmd = '#!/bin/bash\n' + writeCmd;
 		}
-		fs.writeFileSync(path, writeCmd);
-		fs.chmodSync(path, 0o777);
-		child.exec(path, (err, stdout, stderr) => {
+		fs.mkdirSync(path);
+		fs.writeFileSync(path + '/run_tmp', writeCmd, {mode: 0o777});
+		child.exec(path + '/run_tmp', {timeout: 30000, cwd: path}, (err, stdout, stderr) => {
 			if(err != null) {
 				msg.channel.send('**Error**\n```' + stderr +'```');
 			} else {
 				msg.channel.send(stdout);
 			}
 
-			fs.unlinkSync(path);
+			fs.rmdir(path, {recursive: true}, err => {
+				if(err != null) throw err;
+			});
 		});
 	}
 });
