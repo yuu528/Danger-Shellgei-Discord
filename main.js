@@ -11,13 +11,13 @@ client.on('ready', () => {
 });
 
 client.on('message', msg => {
-	if(!msg.author.bot && msg.mentions.has(client.user)) {
+	let mentionRegEx = new RegExp('<@!?' + client.user.id + '>');
+	if(!msg.author.bot && mentionRegEx.test(msg.content)) {
 		let path = __dirname + '/tmp/' + msg.author.id + msg.createdTimestamp;
-		let writeCmd = msg.content.replace('<@' + client.user.id + '>', '').trim().trim();
+		let writeCmd = msg.content.replace(mentionRegEx, '').trim().trim();
 		if(!/^#!/.test(writeCmd)) {
 			writeCmd = '#!/bin/bash\n' + writeCmd;
 		}
-		console.log(msg.content);
 		fs.writeFileSync(path, writeCmd);
 		fs.chmodSync(path, 0o777);
 		child.exec(path, (err, stdout, stderr) => {
