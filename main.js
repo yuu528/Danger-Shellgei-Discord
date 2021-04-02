@@ -28,6 +28,7 @@ client.on('message', msg => {
 
 		//一時ディレクトリ・スクリプトの作成
 		fs.mkdirSync(path);
+		fs.mkdirSync(path + '/images');
 		fs.writeFileSync(path + '/run_tmp', writeCmd, {mode: 0o777});
 
 		//30secの制限でスクリプトを実行
@@ -35,7 +36,17 @@ client.on('message', msg => {
 			if(err != null) {
 				msg.channel.send('**Error**\n```' + stderr +'```');
 			} else {
-				msg.channel.send(stdout);
+				let images = fs.readdirSync(path + '/images', {withFileTypes: true});
+				let files = [];
+
+				//imagesにファイルが有れば添付
+				images.forEach(image => {
+					if(image.isFile()) {
+						files.push(path + '/images/' + image.name);
+					}
+				});
+
+				msg.channel.send(stdout, {files: files});
 			}
 
 			//一時ディレクトリ削除
