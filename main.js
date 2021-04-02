@@ -32,28 +32,41 @@ client.on('message', msg => {
 		fs.writeFileSync(path + '/run_tmp', writeCmd, {mode: 0o777});
 
 		//30secの制限でスクリプトを実行
-		child.exec(path + '/run_tmp', {timeout: 30000, cwd: path}, (err, stdout, stderr) => {
-			if(err != null) {
-				msg.channel.send('**Error**\n```' + stderr +'```');
-			} else {
-				let images = fs.readdirSync(path + '/images', {withFileTypes: true});
-				let files = [];
+		child.exec(
+			path + '/run_tmp',
+			{
+				timeout: 30000,
+				cwd: path,
+				env: Object.assign(process.env, {
+					TEXTIMG_OUTPUT_DIR: path + '/images',
+					TEXTIMG_FONT_FILE: '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+					TEXTIMG_EMOJI_DIR: '/usr/local/src/noto-emoji/png/128',
+					TEXTIMG_EMOJI_FONT_FILE: '/usr/share/fonts/truetype/ancient-scripts/Symbola_hint.ttf'
+				})
+			},
+			(err, stdout, stderr) => {
+				if(err != null) {
+					msg.channel.send('**Error**\n```' + stderr +'```');
+				} else {
+					let images = fs.readdirSync(path + '/images', {withFileTypes: true});
+					let files = [];
 
-				//imagesにファイルが有れば添付
-				images.forEach(image => {
-					if(image.isFile()) {
-						files.push(path + '/images/' + image.name);
-					}
+					//imagesにファイルが有れば添付
+					images.forEach(image => {
+						if(image.isFile()) {
+							files.push(path + '/images/' + image.name);
+						}
+					});
+
+					msg.channel.send(stdout, {files: files});
+				}
+
+				//一時ディレクトリ削除
+				fs.rmdir(path, {recursive: true}, err => {
+					if(err != null) throw err;
 				});
-
-				msg.channel.send(stdout, {files: files});
 			}
-
-			//一時ディレクトリ削除
-			fs.rmdir(path, {recursive: true}, err => {
-				if(err != null) throw err;
-			});
-		});
+		);
 	}
 });
 
