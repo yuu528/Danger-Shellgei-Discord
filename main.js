@@ -1,8 +1,8 @@
-const Discord = require('discord.js');
+const {Client, GatewayIntentBits} = require('discord.js');
 const child = require('child_process');
 const fs = require('fs');
 
-const client = new Discord.Client();
+const client = new Client({intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessages]});
 
 const dataJSON = JSON.parse(fs.readFileSync(__dirname + '/data.json', 'utf-8'));
 
@@ -10,8 +10,9 @@ client.on('ready', () => {
 	console.log('ready!');
 });
 
-client.on('message', msg => {
+client.on('messageCreate', msg => {
 	let mentionRegEx = new RegExp('<@!?' + client.user.id + '>');
+	console.log(msg.author.tag + ': ' + msg.content);
 
 	//bot以外からのメンションなら
 	if(!msg.author.bot && mentionRegEx.test(msg.content)) {
@@ -46,7 +47,7 @@ client.on('message', msg => {
 			},
 			(err, stdout, stderr) => {
 				if(err != null) {
-					msg.channel.send('**Error**\n```' + stderr +'```');
+					msg.channel.send('**Error**\n```' + stderr.slice(0, 1984) +'```');
 				} else {
 					let images = fs.readdirSync(path + '/images', {withFileTypes: true});
 					let files = [];
@@ -58,11 +59,11 @@ client.on('message', msg => {
 						}
 					});
 
-					msg.channel.send(stdout, {files: files});
+					msg.channel.send(stdout.slice(0, 2000), {files: files});
 				}
 
 				//一時ディレクトリ削除
-				fs.rmdir(path, {recursive: true}, err => {
+				fs.rm(path, {recursive: true}, err => {
 					if(err != null) throw err;
 				});
 			}
